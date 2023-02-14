@@ -1,0 +1,24 @@
+.chat {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 500px;
+  &-user,
+  &-message {
+    display: none;
+    &-list {
+      &__name {
+        display: inline-block;
+      }
+    }
+    &.active {
+      display: block;
+    }
+  }
+  &-user {
+    // display: flex;
+    flex-direction: column;
+  }
+}
