@@ -3,7 +3,14 @@
     [
       "@babel/preset-env",
       {
-        "modules": false
+        "modules": false,
+        "targets": {
+          "browsers": [
+            "last 2 years",
+            "not ie 11",
+            "not ie_mob > 0"
+          ]
+        }
       }
     ]
   ]

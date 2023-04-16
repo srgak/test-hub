@@ -1,83 +1,92 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const {CleanWebpackPlugin} = require('clean-webpack-plugin');
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const pages = require('./webpack/pages');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
-const isDev = process.env.NODE_ENV === 'development';
-const isProd = process.env.NODE_ENV === 'production';
+const webpack = require('webpack');
+const FileManagerPlugin = require('filemanager-webpack-plugin');
+const mode = process.env.NODE_ENV || 'development';
+const isDev = mode === 'development';
 
 module.exports = {
-  context: path.resolve(__dirname, 'src'),
-  entry: './index.ts',
-  devtool: 'inline-source-map',
-  //билд на выходе
+  devtool: isDev ? 'inline-source-map' : false,
+  entry: path.resolve(__dirname, './src/index.js'),
   output: {
-    filename: 'bundle-js.[contenthash].js',
-    path: path.resolve(__dirname, 'dist'),
-    assetModuleFilename: path.join('images', '[name].[contenthash][ext]')
+    path: path.resolve(__dirname, './dist'),
+    clean: true,
+    filename: '[name].bundle.js',
+    assetModuleFilename: path.join('assets/images', '[name][ext]')
   },
   module: {
     rules: [
-      //файлы pug
+      {
+        test: /\.js$/,
+        use: 'babel-loader',
+        exclude: /node_modules/
+      },
       {
         test: /\.pug$/,
-        use: [
-          {
-            loader: 'pug-loader',
-            options: {
-              pretty: isDev
-            }
-          }
-        ]
+        loader: 'pug-loader'
       },
-      //файлы стилей
       {
         test: /\.(less|css)$/,
         use: [
           MiniCssExtractPlugin.loader,
           'css-loader',
+          'postcss-loader',
           'less-loader'
         ]
       },
-      //файлы изобрадений
       {
-        test: /\.(png|jpg|svg|gif)$/,
-        type: 'asset/resource',
+        test: /\.(png|jpg|jpeg|gif|svg)$/i,
+        type: 'asset/resource'
       },
-      //js
       {
-        test: /\.(js|ts)$/,
-        exclude: /node_modules/,
-        use: isProd ? ['babel-loader', 'ts-loader'] : ['ts-loader']
+        test: /\.(mp4|mov|webm)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: path.join('assets/video', '[name][ext]')
+        }
+      },
+      {
+        test: /\.(woff2?|eot|ttf|otf)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: path.join('assets/fonts', '[name][ext]')
+        }
+      },
+      {
+        test: /\.(json)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: path.join('mock', '[name][ext]')
+        }
       }
     ]
   },
+  plugins: [
+    ...pages,
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          delete: ['dist/*.LICENSE.txt']
+        }
+      }
+    }),
+    new MiniCssExtractPlugin({
+      filename: '[name].css'
+    }),
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jQuery: 'jquery'
+    })
+  ],
   optimization: {
     minimizer: [
       new CssMinimizerPlugin()
     ]
   },
-  //плагины
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, './src/index.pug'),
-      filename: 'index.html'
-    }),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, './src/pages/chat.pug'),
-      filename: 'chat.html'
-    }),
-    new MiniCssExtractPlugin({
-      filename: 'bundle-css.[contenthash].css'
-    }),
-    new CleanWebpackPlugin(),
-  ],
-  //дев сервер
   devServer: {
     watchFiles: path.join(__dirname, 'src'),
-    port: 4200
-  },
-  resolve: {
-    extensions: ['.ts', '.js'],
+    port: 8080
   }
-}
+};
